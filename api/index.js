@@ -1,3 +1,5 @@
+const QRCode = require('qrcode');
+
 export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -10,20 +12,30 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Forward request to Python QR generator
-    const qrResponse = await fetch(`${req.headers.host ? 'https://' + req.headers.host : 'http://localhost:3000'}/api/qr`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
+    const url = 'https://qrfd.vercel.app/';
+    
+    // Add timestamp to make each QR code unique so it regenerates every 5 seconds
+    const timestamp = Math.floor(Date.now() / 5000) * 5000;
+    const uniqueUrl = `${url}?t=${timestamp}`;
+    
+    // Generate QR code
+    const qrCodeDataUrl = await QRCode.toDataURL(uniqueUrl, {
+      errorCorrectionLevel: 'M',
+      type: 'image/png',
+      quality: 0.92,
+      margin: 1,
+      width: 256,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
       }
     });
 
-    if (!qrResponse.ok) {
-      throw new Error('QR generation service unavailable');
-    }
-
-    const qrData = await qrResponse.json();
-    res.status(200).json(qrData);
+    res.status(200).json({ 
+      qrCode: qrCodeDataUrl,
+      url: url,
+      timestamp: timestamp
+    });
   } catch (error) {
     console.error('QR Code generation failed:', error);
     res.status(500).json({ 

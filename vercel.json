@@ -1,16 +1,18 @@
 {
+  "version": 2,
   "functions": {
     "api/index.js": {
-      "runtime": "nodejs22.x"
-    },
-    "api/qr.py": {
-      "runtime": "python3.9"
+      "runtime": "@vercel/node@3.1.5"
     }
   },
-  "rewrites": [
+  "routes": [
     {
-      "source": "/",
-      "destination": "/index.html"
+      "src": "/api/(.*)",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
     }
   ]
 }

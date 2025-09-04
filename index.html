@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator - Roblox</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 700;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            margin-bottom: 30px;
+            opacity: 0.8;
+            font-size: 1.1em;
+        }
+
+        .qr-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 30px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-code {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+
+        .loading {
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .url-display {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 1.1em;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .countdown {
+            font-size: 1.2em;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+            border-radius: 3px;
+            transition: width 1s linear;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 20px;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .refresh-btn:active {
+            transform: translateY(0);
+        }
+
+        .error {
+            color: #ff6b6b;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .qr-container.loading {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>QR Generator</h1>
+        <p class="subtitle">Auto-generating QR codes for Roblox</p>
+        
+        <div class="qr-container" id="qrContainer">
+            <div class="loading">Generating QR code...</div>
+        </div>
+        
+        <div class="url-display">www.roblox.com</div>
+        
+        <div class="countdown">Next refresh in: <span id="countdown">5</span>s</div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <button class="refresh-btn" onclick="generateQR()">Generate New QR Code</button>
+        
+        <div id="error" class="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        let countdownValue = 5;
+        let countdownInterval;
+        let progressInterval;
+
+        async function generateQR() {
+            const qrContainer = document.getElementById('qrContainer');
+            const errorDiv = document.getElementById('error');
+            
+            qrContainer.innerHTML = '<div class="loading">Generating QR code...</div>';
+            qrContainer.classList.add('loading');
+            errorDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/qr');
+                const data = await response.json();
+                
+                if (response.ok && data.qrCode) {
+                    qrContainer.innerHTML = `<img src="${data.qrCode}" alt="QR Code for ${data.url}" class="qr-code">`;
+                    qrContainer.classList.remove('loading');
+                } else {
+                    throw new Error(data.error || 'Failed to generate QR code');
+                }
+            } catch (error) {
+                console.error('Error generating QR code:', error);
+                qrContainer.innerHTML = '<div class="loading">Failed to generate QR code</div>';
+                qrContainer.classList.remove('loading');
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+            }
+            
+            resetCountdown();
+        }
+
+        function resetCountdown() {
+            countdownValue = 5;
+            document.getElementById('countdown').textContent = countdownValue;
+            document.getElementById('progressFill').style.width = '100%';
+            
+            clearInterval(countdownInterval);
+            clearInterval(progressInterval);
+            
+            startCountdown();
+        }
+
+        function startCountdown() {
+            countdownInterval = setInterval(() => {
+                countdownValue--;
+                document.getElementById('countdown').textContent = countdownValue;
+                
+                if (countdownValue <= 0) {
+                    generateQR();
+                }
+            }, 1000);
+
+            // Progress bar animation
+            let progress = 100;
+            progressInterval = setInterval(() => {
+                progress -= (100 / 5000) * 100; // Decrease over 5 seconds
+                if (progress <= 0) {
+                    progress = 0;
+                    clearInterval(progressInterval);
+                }
+                document.getElementById('progressFill').style.width = progress + '%';
+            }, 100);
+        }
+
+        // Start the application
+        generateQR();
+    </script>
+</body>
+</html>

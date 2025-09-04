@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "api/index.js": {
+      "runtime": "nodejs22.x"
+    },
+    "api/qr.py": {
+      "runtime": "python3.9"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/index.html"
+    }
+  ]
+}
